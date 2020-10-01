@@ -41,6 +41,13 @@ public class AwsS3ClientTest {
       String accessToken = restClientUtil.getAccessToken(clientId, clientSecret, loginURL);
       assertNotNull(accessToken);
       assertNotSame("", accessToken);
+
+      AwsTokenDetails awsTokenDetails = restClientUtil.getAwsAccessKeys(accessToken, awsTokenUrl);
+      assertNotNull(awsTokenDetails);
+      assertNotNull(awsTokenDetails.credentials);
+      assertNotNull(awsTokenDetails.credentials.acccessKeyId);
+      assertNotNull(awsTokenDetails.credentials.secreteAccessKey);
+      assertNotNull(awsTokenDetails.credentials.sessionToken);
   }
 
 /*    @Test

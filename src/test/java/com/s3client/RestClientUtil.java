@@ -1,39 +1,30 @@
 package com.s3client;
 
+import com.google.gson.Gson;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.message.BasicNameValuePair;
-
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.ssl.SSLContextBuilder;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.io.IOException;
-import java.security.KeyManagementException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.logging.Logger;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import  com.google.gson.Gson;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
 
 class OauthToken {
   String access_token;
@@ -82,6 +73,34 @@ public class RestClientUtil {
     }
 
   }
+
+  public AwsTokenDetails getAwsAccessKeys(String accessToken, String awsTokenUrl) {
+        log.info("*** Start getAwsAccessKeys ***");
+        try (CloseableHttpClient httpclient = createAcceptSelfSignedCertificateClient()) {
+            String jsonBody = "{'acccessType':'Consume'}";
+            // Create new getRequest with below mentioned URL
+            HttpPost postRequest = new HttpPost(awsTokenUrl);
+            // set the Content-type
+            postRequest.addHeader("Authorization", "Bearer " + accessToken);
+            postRequest.setHeader("Content-type", "application/json;v=1");
+            postRequest.setHeader("Accept", "application/json;v=1");
+            postRequest.setEntity(new StringEntity(jsonBody));
+
+            // Execute your request and catch response
+            HttpResponse response = httpclient.execute(postRequest);
+
+            BasicResponseHandler  handler = new BasicResponseHandler();
+            String responseBody = handler.handleResponse(response);
+            log.info("\nresponseBody: "+responseBody);
+            System.out.println("\nresponseBody: "+responseBody);
+
+            return new Gson().fromJson(responseBody, AwsTokenDetails.class);
+        } catch (Exception ex) {
+            log.error("*** Error in getAwsAccessKeys *** "+ex.getMessage());
+            ex.printStackTrace();
+            throw new RuntimeException(ex.toString());
+        }
+   }
 
   private static CloseableHttpClient createAcceptSelfSignedCertificateClient()
           throws KeyManagementException, NoSuchAlgorithmException, KeyStoreException {
